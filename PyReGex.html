@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Python Regex Guide</title>
+    <!-- Chosen Palette: "Slate & Sky" - A calm, modern palette using neutral grays (slate) with a gentle blue (sky) for accents and highlights, creating a focused and professional learning environment. -->
+    <!-- Application Structure Plan: A multi-section, single-page application designed for progressive learning and experimentation. The structure includes: 1) A sticky header for navigation. 2) A main "Regex Tester" section at the top for immediate hands-on practice, as this is the most engaging tool. 3) A tab-based navigation to switch between conceptual sections ("Metacharacters", "Special Sequences", "Functions & Flags"). This segmented approach allows users to focus on one topic at a time without overwhelming them. 4) Each section will contain interactive cards or tables where hovering or clicking reveals more information or highlights relevant parts in the tester. This structure was chosen to transform a linear document into an exploratory and non-linear learning experience, catering to both beginners who need a structured path and experienced users who want to quickly test a pattern. -->
+    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification. 1) Regex Pattern & Test String -> Goal: Experiment & Understand -> Viz: Live code-editor-like text areas (HTML/JS) -> Interaction: User types a regex pattern and a test string; JS updates a "results" area in real-time, highlighting all matches. This provides immediate feedback, which is crucial for learning regex. 2) Metacharacters/Sequences (e.g., '.', '\d', '*') -> Goal: Inform & Explain -> Viz: A responsive grid of cards (HTML/Tailwind) -> Interaction: Each card displays a character, its name, and a short description. An "example" button on the card, when clicked, populates the main Regex Tester with a sample pattern and string demonstrating that specific character. This bridges the gap between theory and practice. 3) `re` Module Functions (e.g., `search`, `findall`) -> Goal: Compare & Contrast -> Viz: A tabbed interface (HTML/JS) -> Interaction: Clicking a tab reveals a clear explanation and a dedicated, pre-filled example in the Regex Tester, showing the output of that specific function. This allows for direct comparison of their behaviors. No charts are needed as the content is primarily text-pattern based. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .font-code {
+            font-family: 'Fira Code', monospace;
+        }
+        .highlight-match {
+            background-color: #dbeafe; /* blue-200 */
+            border-radius: 2px;
+            box-shadow: 0 0 0 1px #93c5fd; /* blue-300 */
+        }
+        .nav-button.active {
+            background-color: #0284c7; /* sky-600 */
+            color: white;
+        }
+        .nav-button {
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-slate-800 text-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <h1 class="text-2xl font-bold text-sky-400">Interactive Regex Guide</h1>
+                <p class="hidden sm:block text-slate-400">Your live Python Regex scratchpad</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Regex Tester Section -->
+        <section id="tester" class="bg-white p-6 rounded-xl shadow-lg mb-8">
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">Regex Live Tester</h2>
+            <p class="mb-6 text-slate-600">Type your regex pattern and test string below. Matches will be highlighted live. This tool simulates how Python's `re` module finds patterns in your text.</p>
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Regex Input -->
+                <div>
+                    <label for="regex-input" class="block text-sm font-medium text-slate-700 mb-1">Regex Pattern</label>
+                    <div class="relative">
+                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-code">r'</span>
+                        <input type="text" id="regex-input" class="font-code w-full pl-8 pr-10 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500" value="\b[A-Za-z]{4}\b">
+                         <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 font-code">'</span>
+                    </div>
+                     <div class="mt-2 flex items-center gap-4">
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" id="flag-ignorecase" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+                            <span class="ml-2 text-slate-700">Case-Insensitive (i)</span>
+                        </label>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" id="flag-multiline" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+                            <span class="ml-2 text-slate-700">Multiline (m)</span>
+                        </label>
+                    </div>
+                </div>
+                <!-- Test String -->
+                <div>
+                    <label for="test-string" class="block text-sm font-medium text-slate-700 mb-1">Test String</label>
+                    <textarea id="test-string" rows="5" class="font-code w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">The quick brown fox jumps over the lazy dog. Fox and dog are common animals.</textarea>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="mt-6">
+                <h3 class="text-lg font-semibold text-slate-800 mb-2">Result (Live Highlighting)</h3>
+                <div id="highlight-output" class="w-full p-4 border border-slate-200 bg-slate-50 rounded-md min-h-[120px] whitespace-pre-wrap font-code text-left" aria-live="polite"></div>
+                <div class="mt-4">
+                    <h4 class="text-md font-semibold text-slate-700">Match Information:</h4>
+                     <p id="match-count" class="text-sm text-slate-600 mt-1">Found 0 matches.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation & Content Sections -->
+        <section class="bg-white p-6 rounded-xl shadow-lg">
+            <div class="border-b border-slate-200 mb-6">
+                <nav class="flex -mb-px space-x-6" aria-label="Tabs">
+                    <button class="nav-button active" data-target="metacharacters">Metacharacters</button>
+                    <button class="nav-button" data-target="sequences">Special Sequences</button>
+                    <button class="nav-button" data-target="functions">Functions & Flags</button>
+                     <button class="nav-button" data-target="groups">Groups & Capturing</button>
+                </nav>
+            </div>
+
+            <!-- Metacharacters Section -->
+            <div id="metacharacters" class="content-section active">
+                <h3 class="text-xl font-bold text-slate-900 mb-4">Metacharacters</h3>
+                <p class="mb-6 text-slate-600">Metacharacters are characters with a special meaning. Click the "Try It" button on any card to see a live example in the tester above.</p>
+                <div id="metacharacters-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- Cards will be injected here by JS -->
+                </div>
+            </div>
+
+            <!-- Special Sequences Section -->
+            <div id="sequences" class="content-section">
+                <h3 class="text-xl font-bold text-slate-900 mb-4">Special Sequences</h3>
+                 <p class="mb-6 text-slate-600">These shorthand sequences make it easier to match common character sets like digits, word characters, or whitespace.</p>
+                <div id="sequences-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- Cards will be injected here by JS -->
+                </div>
+            </div>
+            
+            <!-- Functions & Flags Section -->
+            <div id="functions" class="content-section">
+                <h3 class="text-xl font-bold text-slate-900 mb-4">Common `re` Functions</h3>
+                 <p class="mb-6 text-slate-600">Python's `re` module provides several functions to work with patterns. The tester above primarily simulates `re.findall()` or `re.finditer()`. Below are explanations of the most common functions. Click "Try It" to see how they behave with a sample pattern.</p>
+                <div id="functions-container" class="space-y-4">
+                    <!-- Function explanations will be injected here -->
+                </div>
+            </div>
+
+            <!-- Groups & Capturing Section -->
+            <div id="groups" class="content-section">
+                <h3 class="text-xl font-bold text-slate-900 mb-4">Groups & Capturing</h3>
+                 <p class="mb-6 text-slate-600">Parentheses `()` are used to group parts of a pattern and "capture" the text that matches within them. This is extremely useful for extracting specific data from a larger string.</p>
+                <div id="groups-container" class="space-y-6">
+                    <!-- Grouping explanations will be injected here -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- DATA ---
+    const metacharactersData = [
+        { char: '.', name: 'Dot', desc: 'Matches any single character (except newline).', example: { regex: 'h.t', text: 'hot hit hat h t hoot' } },
+        { char: '^', name: 'Caret', desc: 'Matches the start of the string.', example: { regex: '^Hello', text: 'Hello world\nAnother Hello' } },
+        { char: '$', name: 'Dollar', desc: 'Matches the end of the string.', example: { regex: 'world$', text: 'Hello world\nworld wide' } },
+        { char: '*', name: 'Asterisk', desc: 'Matches 0 or more occurrences of the preceding element.', example: { regex: 'ca*t', text: 'ct cat caat caaaat c t' } },
+        { char: '+', name: 'Plus', desc: 'Matches 1 or more occurrences of the preceding element.', example: { regex: 'ca+t', text: 'ct cat caat caaaat c t' } },
+        { char: '?', name: 'Question Mark', desc: 'Matches 0 or 1 occurrence of the preceding element.', example: { regex: 'colou?r', text: 'color colour' } },
+        { char: '{}', name: 'Braces', desc: 'Matches a specific number of occurrences.', example: { regex: '\\d{3}', text: '123 45 6789 1234' } },
+        { char: '[]', name: 'Brackets', desc: 'Matches any single character within the brackets.', example: { regex: '[bcr]at', text: 'bat cat rat sat' } },
+        { char: '[^]', name: 'Negated Set', desc: 'Matches any character NOT in the brackets.', example: { regex: '[^aeiou]', text: 'hello world' } },
+        { char: '|', name: 'Pipe', desc: 'Acts as an OR operator.', example: { regex: 'cat|dog', text: 'A cat, a dog, a bird.' } },
+        { char: '()', name: 'Group', desc: 'Groups expressions and captures the match.', example: { regex: '(ha)+', text: 'ha haha hahaha' } },
+        { char: '\\', name: 'Backslash', desc: 'Escapes a special character to treat it literally.', example: { regex: 'c\\.at', text: 'The file is c.at, not cat.' } },
+    ];
+
+    const sequencesData = [
+        { char: '\\d', name: 'Digit', desc: 'Matches any digit (0-9).', example: { regex: '\\d+', text: 'Order 123 for item 45.' } },
+        { char: '\\D', name: 'Non-Digit', desc: 'Matches any non-digit character.', example: { regex: '\\D+', text: 'Order 123 for item 45.' } },
+        { char: '\\w', name: 'Word Character', desc: 'Matches any letter, digit, or underscore.', example: { regex: '\\w+', text: 'word_123, user-name.' } },
+        { char: '\\W', name: 'Non-Word', desc: 'Matches any non-word character.', example: { regex: '\\W', text: 'word_123, user-name.' } },
+        { char: '\\s', name: 'Whitespace', desc: 'Matches space, tab, newline.', example: { regex: 'hello\\sworld', text: 'hello world, hello\tworld' } },
+        { char: '\\S', name: 'Non-Whitespace', desc: 'Matches any non-whitespace character.', example: { regex: '\\S+', text: 'hello world' } },
+        { char: '\\b', name: 'Word Boundary', desc: 'Matches the edge of a word.', example: { regex: '\\bcat\\b', text: 'The cat scattered.' } },
+        { char: '\\B', name: 'Non-Boundary', desc: 'Matches when not at a word boundary.', example: { regex: '\\Bcat\\B', text: 'The concatenation.' } },
+    ];
+
+    const functionsData = [
+        { name: 're.search()', desc: 'Scans the string for the <strong>first</strong> location where the pattern produces a match. If found, it returns a match object; otherwise, it returns `None`. Stops after the first match.', example: { regex: 'fox', text: 'The quick brown fox jumps over another fox.' } },
+        { name: 're.match()', desc: 'Checks for a match <strong>only at the beginning</strong> of the string. Even if the pattern exists elsewhere, it will only return a match object if the string starts with the pattern.', example: { regex: 'The', text: 'The quick brown fox.' } },
+        { name: 're.findall()', desc: 'Returns a <strong>list of all non-overlapping matches</strong> of the pattern in the string. If there are capturing groups in the pattern, it returns a list of tuples.', example: { regex: '[fd]ox', text: 'The quick brown fox and the sly fox met a dog.' } },
+        { name: 're.sub()', desc: 'Replaces occurrences of a pattern in a string with a replacement string. It returns the new, modified string.', example: { regex: 'dog', text: 'The lazy dog and another dog.' } },
+    ];
+    
+    const groupsData = [
+        { 
+            name: 'Capturing Groups `()`',
+            desc: 'When you enclose part of a pattern in parentheses, you create a capturing group. The matched text can be accessed individually. For example, to extract the area code and phone number separately.',
+            example: { regex: '(\\d{3})-(\\d{3}-\\d{4})', text: 'My phone is 123-456-7890.' }
+        },
+        { 
+            name: 'Named Groups `(?P<name>...)`',
+            desc: 'For better readability, you can name your capturing groups. This allows you to access the captured data by name instead of by its index number.',
+            example: { regex: '(?P<user>\\w+)@(?P<domain>[\\w.]+)', text: 'Contact us at help@example.com.' }
+        },
+         { 
+            name: 'Non-Capturing Groups `(?:...)`',
+            desc: 'Sometimes you need to group characters (e.g., to apply a quantifier like `+` or `?`), but you don\'t want to capture the result. A non-capturing group is more efficient for this purpose.',
+            example: { regex: '(?:https?://)(www\\.[\\w.]+\\.\\w+)', text: 'Visit http://www.example.com or https://www.test.org for info.' }
+        }
+    ];
+
+    // --- DOM Elements ---
+    const regexInput = document.getElementById('regex-input');
+    const testStringInput = document.getElementById('test-string');
+    const highlightOutput = document.getElementById('highlight-output');
+    const matchCount = document.getElementById('match-count');
+    const flagIgnorecase = document.getElementById('flag-ignorecase');
+    const flagMultiline = document.getElementById('flag-multiline');
+    const navButtons = document.querySelectorAll('.nav-button');
+    const contentSections = document.querySelectorAll('.content-section');
+    const metacharactersGrid = document.getElementById('metacharacters-grid');
+    const sequencesGrid = document.getElementById('sequences-grid');
+    const functionsContainer = document.getElementById('functions-container');
+    const groupsContainer = document.getElementById('groups-container');
+    
+    // --- UI Initialization ---
+    
+    function createCard(item) {
+        return `
+            <div class="card bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col items-start text-left">
+                <div class="flex items-baseline gap-2">
+                    <span class="font-code text-sky-600 font-bold text-lg">${item.char || item.name}</span>
+                    ${item.char ? `<h4 class="font-semibold text-slate-800">${item.name}</h4>` : ''}
+                </div>
+                <p class="text-slate-600 text-sm mt-2 flex-grow">${item.desc}</p>
+                <button class="try-it-btn text-sm text-sky-600 font-semibold mt-4 hover:text-sky-800 transition-colors"
+                    data-regex="${item.example.regex.replace(/"/g, '&quot;')}" data-text="${item.example.text.replace(/"/g, '&quot;')}">
+                    Try It &rarr;
+                </button>
+            </div>
+        `;
+    }
+    
+    metacharactersData.forEach(item => {
+        metacharactersGrid.innerHTML += createCard(item);
+    });
+
+    sequencesData.forEach(item => {
+        sequencesGrid.innerHTML += createCard(item);
+    });
+    
+    functionsData.forEach(item => {
+        functionsContainer.innerHTML += `
+            <div class="card bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <h4 class="font-semibold text-slate-800 font-code">${item.name}</h4>
+                <p class="text-slate-600 text-sm mt-2">${item.desc}</p>
+                 <button class="try-it-btn text-sm text-sky-600 font-semibold mt-3 hover:text-sky-800 transition-colors"
+                    data-regex="${item.example.regex.replace(/"/g, '&quot;')}" data-text="${item.example.text.replace(/"/g, '&quot;')}">
+                    Try Example &rarr;
+                </button>
+            </div>
+        `;
+    });
+    
+    groupsData.forEach(item => {
+        groupsContainer.innerHTML += `
+            <div class="card bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <h4 class="font-semibold text-slate-800 font-code">${item.name}</h4>
+                <p class="text-slate-600 text-sm mt-2">${item.desc}</p>
+                 <button class="try-it-btn text-sm text-sky-600 font-semibold mt-3 hover:text-sky-800 transition-colors"
+                    data-regex="${item.example.regex.replace(/"/g, '&quot;')}" data-text="${item.example.text.replace(/"/g, '&quot;')}">
+                    Try Example &rarr;
+                </button>
+            </div>
+        `;
+    });
+
+    // --- Event Listeners ---
+    [regexInput, testStringInput, flagIgnorecase, flagMultiline].forEach(el => {
+        el.addEventListener('input', updateHighlighting);
+        el.addEventListener('change', updateHighlighting);
+    });
+
+    document.body.addEventListener('click', (e) => {
+        if (e.target.classList.contains('try-it-btn')) {
+            regexInput.value = e.target.dataset.regex;
+            testStringInput.value = e.target.dataset.text;
+            updateHighlighting();
+            document.getElementById('tester').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetId = button.dataset.target;
+
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            contentSections.forEach(section => {
+                section.classList.toggle('active', section.id === targetId);
+            });
+        });
+    });
+
+    // --- Core Logic ---
+    function updateHighlighting() {
+        const pattern = regexInput.value;
+        const text = testStringInput.value;
+        let flags = 'g'; // Global flag is necessary for finditer-like behavior
+        if (flagIgnorecase.checked) flags += 'i';
+        if (flagMultiline.checked) flags += 'm';
+
+        if (!pattern) {
+            highlightOutput.textContent = text;
+            matchCount.textContent = 'Found 0 matches.';
+            return;
+        }
+
+        try {
+            const regex = new RegExp(pattern, flags);
+            let matches = Array.from(text.matchAll(regex));
+            
+            if (matches.length === 0) {
+                highlightOutput.textContent = text;
+                matchCount.textContent = 'Found 0 matches.';
+                return;
+            }
+            
+            matchCount.textContent = `Found ${matches.length} match${matches.length === 1 ? '' : 'es'}.`;
+
+            let lastIndex = 0;
+            const fragments = [];
+
+            matches.forEach(match => {
+                const matchStartIndex = match.index;
+                const matchEndIndex = matchStartIndex + match[0].length;
+                
+                // Text before the match
+                if (matchStartIndex > lastIndex) {
+                    fragments.push(document.createTextNode(text.substring(lastIndex, matchStartIndex)));
+                }
+
+                // The highlighted match
+                const span = document.createElement('span');
+                span.className = 'highlight-match';
+                span.textContent = match[0];
+                fragments.push(span);
+                
+                lastIndex = matchEndIndex;
+            });
+            
+            // Text after the last match
+            if (lastIndex < text.length) {
+                fragments.push(document.createTextNode(text.substring(lastIndex)));
+            }
+
+            highlightOutput.innerHTML = '';
+            fragments.forEach(frag => highlightOutput.appendChild(frag));
+
+        } catch (e) {
+            highlightOutput.textContent = text;
+            matchCount.textContent = 'Invalid Regex Pattern.';
+        }
+    }
+
+    // Initial run
+    updateHighlighting();
+});
+</script>
+
+</body>
+</html>
